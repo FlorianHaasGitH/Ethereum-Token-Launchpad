@@ -3,9 +3,10 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { parseUnits } = require("ethers"); // Ensure compatibility
 
 describe("Factory", function () {
-  const FEE = ethers.parseUnits("0.01", 18);
+  const FEE = parseUnits("0.01", 18);
 
   async function deployFactoryFixture() {
     // Fetch accounts
@@ -21,6 +22,7 @@ describe("Factory", function () {
     const transaction = await factory
       .connect(creator)
       .create("Dapp Uni", "DAPP", { value: FEE });
+    await transaction.wait();
 
     // Get token address
     const tokenAddress = await factory.tokens(0);
@@ -31,7 +33,7 @@ describe("Factory", function () {
 
   describe("Deployment", function () {
     it("Should set a fee", async function () {
-      const { factory } = await loadFixture(deployFactoryFixture); // Fixed
+      const { factory } = await loadFixture(deployFactoryFixture);
       expect(await factory.fee()).to.equal(FEE);
     });
 
@@ -45,6 +47,20 @@ describe("Factory", function () {
     it("Should check if the token got successfully created", async function () {
       const { factory, token } = await loadFixture(deployFactoryFixture);
       expect(await token.owner()).to.equal(await factory.getAddress());
+    });
+
+    it("Should set the creator", async function () {
+      const { token, creator } = await loadFixture(deployFactoryFixture);
+      expect(await token.creator()).to.equal(creator.address);
+    });
+
+    it("Should set the supply", async function () {
+      const { factory, token } = await loadFixture(deployFactoryFixture);
+      const totalSupply = parseUnits("1000000", 18);
+
+      expect(await token.balanceOf(await factory.getAddress())).to.equal(
+        totalSupply
+      );
     });
   });
 });
