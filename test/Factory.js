@@ -9,7 +9,7 @@ describe("Factory", function () {
 
   async function deployFactoryFixture() {
     // Fetch accounts
-    const [deployer] = await ethers.getSigners();
+    const [deployer, creator] = await ethers.getSigners();
 
     // Fetch the contract
     const Factory = await ethers.getContractFactory("Factory");
@@ -17,7 +17,16 @@ describe("Factory", function () {
     // Deploy the contract
     const factory = await Factory.deploy(FEE);
 
-    return { factory, deployer };
+    // Create Contract
+    const transaction = await factory
+      .connect(creator)
+      .create("Dapp Uni", "DAPP", { value: FEE });
+
+    // Get token address
+    const tokenAddress = await factory.tokens(0);
+    const token = await ethers.getContractAt("Token", tokenAddress);
+
+    return { factory, token, deployer, creator };
   }
 
   describe("Deployment", function () {
@@ -29,6 +38,13 @@ describe("Factory", function () {
     it("Should set the owner", async function () {
       const { factory, deployer } = await loadFixture(deployFactoryFixture);
       expect(await factory.owner()).to.equal(deployer.address);
+    });
+  });
+
+  describe("Creating", function () {
+    it("Should check if the token got successfully created", async function () {
+      const { factory, token } = await loadFixture(deployFactoryFixture);
+      expect(await token.owner()).to.equal(await factory.getAddress());
     });
   });
 });
