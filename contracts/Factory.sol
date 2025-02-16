@@ -105,4 +105,13 @@ contract Factory {
         // Emit an event
         emit Buy(_token, _amount);
     }
+
+    function deposit(address _token) external {
+        Token token = Token(_token);
+        TokenSale memory sale = tokenToSale[_token];
+
+        require(sale.isOpen == false, "Factory: Target not reached");
+
+        token.transfer(sale.creator, token.balanceOf(address(this)));
+    }
 }
