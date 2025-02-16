@@ -113,5 +113,16 @@ contract Factory {
         require(sale.isOpen == false, "Factory: Target not reached");
 
         token.transfer(sale.creator, token.balanceOf(address(this)));
+
+        // Transfer ETH raised
+        (bool success, ) = payable(sale.creator).call{value: sale.raised}("");
+        require(success, "Factory: ETH transfer failed");
+    }
+
+    function withdraw(uint256 _amount) external {
+        require(msg.sender == owner, "Factory: Not owner");
+
+        (bool success, ) = payable(owner).call{value: _amount}("");
+        require(success, "Factory: ETH transfer failed");
     }
 }
