@@ -64,6 +64,6 @@ contract Factory {
     }
 
     function buy(address _token, uint256 _amount) public payable {
-        Token(_token).tansfer(msg.sender, _amount)
+        Token(_token).transfer(msg.sender, _amount);
     }
 }

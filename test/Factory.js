@@ -107,7 +107,27 @@ describe("Factory", function () {
     });
   });
 
-  describe("Sending", function () {
-    it("Should transfer the token", function () {});
+  describe("Buying", function () {
+    const AMOUNT = ethers.parseUnits("1000", 18);
+    const COST = ethers.parseUnits("1", 18);
+
+    // Check contract received ETH
+    it("Should update ETH balance", async function () {
+      const { factory } = await loadFixture(buyTokenFixture);
+
+      const balance = await ethers.provider.getBalance(
+        await factory.getAddress()
+      );
+      expect(balance).to.equal(FEE + COST);
+    });
+
+    // Check that buyer received tokens
+    it("Should update token balances", async function () {
+      const { token, buyer } = await loadFixture(buyTokenFixture);
+
+      const balance = await token.balanceOf(buyer.address);
+
+      expect(balance).to.equal(AMOUNT);
+    });
   });
 });
