@@ -16,14 +16,29 @@ import config from "./config.json";
 import images from "./images.json";
 
 export default function Home() {
+  const [provider, setProvider] = useState(null);
+  const [account, setAccount] = useState(null);
+
+  async function loadBlockchainData() {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    setProvider(provider);
+
+    const accounts = new window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    setAccount(accounts[0]);
+  }
+
+  useEffect(() => {
+    loadBlockchainData(), [];
+  });
+
   return (
     <div className="page">
       <Header
         account={0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266}
         setAccount={""}
       />
-
-      <h1 style={{ padding: "1em" }}>fun.pump</h1>
     </div>
   );
 }
