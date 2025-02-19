@@ -23,10 +23,16 @@ export default function Home() {
     const provider = new ethers.BrowserProvider(window.ethereum);
     setProvider(provider);
 
-    const accounts = new window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    setAccount(accounts[0]);
+    const network = await provider.getNetwork();
+
+    const factory = new ethers.Contract(
+      config[network.chainId].factory.address,
+      Factory,
+      provider
+    );
+
+    const fee = await factory.fee();
+    console.log("fee", fee);
   }
 
   useEffect(() => {

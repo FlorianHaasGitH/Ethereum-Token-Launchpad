@@ -3,10 +3,11 @@ pragma solidity 0.8.27;
 
 import {Token} from "./Token.sol";
 
+import "hardhat/console.sol";
+
 contract Factory {
     uint256 public constant TARGET = 3 ether;
     uint256 public constant TOKEN_LIMIT = 500_000 ether;
-
     uint256 public immutable fee;
     address public owner;
 
@@ -50,17 +51,17 @@ contract Factory {
         string memory _name,
         string memory _symbol
     ) external payable {
-        // Make sure that the fee is correct
         require(msg.value >= fee, "Factory: Creator fee not met");
 
-        // Create a new token
         Token token = new Token(msg.sender, _name, _symbol, 1_000_000 ether);
 
-        // Save the token for later use
+        // Store token address
         tokens.push(address(token));
+
+        // Increment total tokens
         totalTokens++;
 
-        // List the token for sale
+        // Create the sale.
         TokenSale memory sale = TokenSale(
             address(token),
             _name,
@@ -70,48 +71,55 @@ contract Factory {
             true
         );
 
+        // Save the sale to mapping.
         tokenToSale[address(token)] = sale;
 
-        // Tell people it's live
         emit Created(address(token));
     }
 
-    function buy(address _token, uint256 _amount) public payable {
+    function buy(address _token, uint256 _amount) external payable {
         TokenSale storage sale = tokenToSale[_token];
-        // Check conditions
+
         require(sale.isOpen == true, "Factory: Buying closed");
         require(_amount >= 1 ether, "Factory: Amount too low");
         require(_amount <= 10000 ether, "Factory: Amount exceeded");
 
-        // Calculate the price of 1 token based upon total bought.
+        // Calculate the price of 1 token based on the total bought.
         uint256 cost = getCost(sale.sold);
 
+        // Determine the total price for X amount.
         uint256 price = cost * (_amount / 10 ** 18);
 
-        // Make sure enough eth is sent
+        // Check to ensure enough ETH is sent.
         require(msg.value >= price, "Factory: Insufficient ETH received");
 
-        // Update the sale
+        // Update contract states.
         sale.sold += _amount;
         sale.raised += price;
 
-        // Make sure fund raising goal isn't met
+        // If we have reached our ETH goal OR buy limit, stop allowing buys.
         if (sale.sold >= TOKEN_LIMIT || sale.raised >= TARGET) {
             sale.isOpen = false;
         }
 
+        // Transfer tokens to buyer.
         Token(_token).transfer(msg.sender, _amount);
 
-        // Emit an event
         emit Buy(_token, _amount);
     }
 
     function deposit(address _token) external {
+        // The remaining token balance and the ETH raised
+        // would go into a liquidity pool like Uniswap V3.
+        // For simplicity we'll just transfer remaining
+        // tokens and ETH raised to the creator.
+
         Token token = Token(_token);
         TokenSale memory sale = tokenToSale[_token];
 
         require(sale.isOpen == false, "Factory: Target not reached");
 
+        // Transfer tokens
         token.transfer(sale.creator, token.balanceOf(address(this)));
 
         // Transfer ETH raised
